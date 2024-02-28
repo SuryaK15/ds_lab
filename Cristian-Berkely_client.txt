@@ -1,0 +1,89 @@
+Christian Client:
+
+import datetime
+import socket
+from timeit import default_timer as timer
+from dateutil import parser
+def client_clk():
+    s = socket.socket()
+    port = 12345
+    s.connect(('127.0.0.1',port))
+    req_tim = timer()
+    server_t = parser.parse(s.recv(1024).decode())
+    res_tim = timer()
+    latency = res_tim - req_tim
+    act_time = datetime.datetime.now()
+    sync_time = server_t + datetime.timedelta(latency/2)
+    print("sync_time is :",sync_time)
+    print("act_time is :",act_time)
+    print("Difference is :",sync_time-act_time)
+
+if _name_ == "_main_":
+    client_clk()
+Christian server
+
+
+import socket
+import datetime
+def server():
+    s = socket.socket()
+    port = 12345
+    s.bind(('',port))
+    s.listen(5)
+    while True:
+        print("Waiting")
+        conn,addr = s.accept()
+        conn.send(str(datetime.datetime.now()).encode())
+        conn.close()
+if _name_ == '_main_':
+    server()
+Berkeley's Client:
+
+from timeit import default_timer as timer
+from dateutil import parser
+import threading
+import datetime
+import socket 
+import time
+
+def startSendingTime(slave_client):
+ 
+    while True:
+        slave_client.send(str(
+                       datetime.datetime.now()).encode())
+ 
+        print("Recent time sent successfully",
+                                          end = "\n\n")
+        time.sleep(5)
+ 
+def startReceivingTime(slave_client):
+ 
+    while True:
+        Synchronized_time = parser.parse(
+                          slave_client.recv(1024).decode())
+ 
+        print("Synchronized time at the client is: " + \
+                                    str(Synchronized_time),
+                                    end = "\n\n")
+ 
+def initiateSlaveClient(port = 8080):
+ 
+    slave_client = socket.socket()          
+    slave_client.connect(('127.0.0.1', port)) 
+    print("Starting to receive time from server\n")
+    send_time_thread = threading.Thread(
+                      target = startSendingTime,
+                      args = (slave_client, ))
+    send_time_thread.start()
+ 
+    print("Starting to receiving " + \
+                         "synchronized time from server\n")
+    receive_time_thread = threading.Thread(
+                       target = startReceivingTime,
+                       args = (slave_client, ))
+    receive_time_thread.start()
+ 
+ 
+if _name_ == '_main_':
+     initiateSlaveClient(port = 8080)
+
